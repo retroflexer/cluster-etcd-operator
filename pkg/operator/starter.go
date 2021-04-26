@@ -95,12 +95,15 @@ func RunOperator(ctx context.Context, controllerContext *controllercmd.Controlle
 		return err
 	}
 
+	versionRecorder := status.NewVersionGetter()
 	configObserver := configobservercontroller.NewConfigObserver(
 		operatorClient,
 		operatorInformers,
 		kubeInformersForNamespaces,
 		resourceSyncController,
 		controllerContext.EventRecorder,
+		versionRecorder,
+		status.VersionForOperatorFromEnv(),
 	)
 
 	staticResourceController := staticresourcecontroller.NewStaticResourceController(
@@ -138,7 +141,6 @@ func RunOperator(ctx context.Context, controllerContext *controllercmd.Controlle
 		controllerContext.EventRecorder,
 	)
 
-	versionRecorder := status.NewVersionGetter()
 	clusterOperator, err := configClient.ConfigV1().ClusterOperators().Get(ctx, "etcd", metav1.GetOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return err
@@ -147,7 +149,6 @@ func RunOperator(ctx context.Context, controllerContext *controllercmd.Controlle
 		versionRecorder.SetVersion(version.Name, version.Version)
 	}
 	versionRecorder.SetVersion("raw-internal", status.VersionForOperatorFromEnv())
-	versionRecorder.SetVersion("operator", status.VersionForOperatorFromEnv())
 
 	staticPodControllers, err := staticpod.NewBuilder(operatorClient, kubeClient, kubeInformersForNamespaces).
 		WithEvents(controllerContext.EventRecorder).

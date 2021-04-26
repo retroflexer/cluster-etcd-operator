@@ -1,6 +1,7 @@
 package configobservercontroller
 
 import (
+	"github.com/openshift/library-go/pkg/operator/status"
 	"k8s.io/client-go/tools/cache"
 
 	operatorv1informers "github.com/openshift/client-go/operator/informers/externalversions"
@@ -12,6 +13,7 @@ import (
 	"github.com/openshift/library-go/pkg/controller/factory"
 
 	"github.com/openshift/cluster-etcd-operator/pkg/operator/configobservation"
+	"github.com/openshift/cluster-etcd-operator/pkg/operator/configobservation/etcdstatus"
 	"github.com/openshift/cluster-etcd-operator/pkg/operator/operatorclient"
 )
 
@@ -25,6 +27,8 @@ func NewConfigObserver(
 	kubeInformersForNamespaces v1helpers.KubeInformersForNamespaces,
 	resourceSyncer resourcesynccontroller.ResourceSyncer,
 	eventRecorder events.Recorder,
+	versionGetter status.VersionGetter,
+	operatorVersion string,
 ) *ConfigObserver {
 	interestingNamespaces := []string{
 		operatorclient.GlobalUserSpecifiedConfigNamespace,
@@ -72,6 +76,7 @@ func NewConfigObserver(
 				),
 			},
 			informers,
+			etcdstatus.NewEtcdStatusObserver(versionGetter, operatorVersion),
 		),
 	}
 
